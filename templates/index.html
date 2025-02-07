@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>掲示板</title>
+    <style>
+        .post {
+            background-color: #f0f8ff;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .comment {
+            margin-left: 20px;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>最強掲示板</h1>
+
+    <!-- 検索フォーム -->
+    <form method="GET" action="{{ url_for('search') }}">
+        <input type="text" name="query" placeholder="検索キーワードを入力">
+        <button type="submit">検索</button>
+    </form>
+
+    <!-- ログイン状態に応じたナビゲーション -->
+    {% if current_user.is_authenticated %}
+        <p>ようこそ、{{ current_user.username }} さん！</p>
+        <a href="{{ url_for('logout') }}">ログアウト</a>
+        <a href="{{ url_for('post') }}">新規投稿</a>
+    {% else %}
+        <a href="{{ url_for('login') }}">ログイン</a>
+        <a href="{{ url_for('register') }}">新規登録</a>
+    {% endif %}
+
+    <!-- 投稿一覧 -->
+    <h2>投稿一覧</h2>
+    {% for post in posts %}
+        <div class="post">
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+            <p>投稿者: {{ post.user.username }}</p>
+            <p>投稿日時: {{ post.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+
+            <!-- 投稿削除ボタン（投稿者のみ表示） -->
+            {% if current_user.is_authenticated and post.user_id == current_user.id %}
+                <a href="{{ url_for('update_post', post_id=post.id) }}">更新</a>
+                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}">
+                    <button type="submit">削除</button>
+                </form>
+            {% endif %}
+
+            <!-- コメント表示部分 -->
+            <div class="comments">
+                <h4>コメント</h4>
+                {% for comment in post.comments %}
+                    <div class="comment">
+                        <p>{{ comment.user.username }}: {{ comment.content }}</p>
+                        <p>コメント日時: {{ comment.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                {% else %}
+                    <p>コメントはまだありません。</p>
+                {% endfor %}
+            </div>
+
+            <!-- コメント投稿フォーム -->
+            {% if current_user.is_authenticated %}
+                <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}">
+                    <textarea name="content" placeholder="コメントを入力" required></textarea>
+                    <button type="submit">コメントを追加</button>
+                </form>
+            {% endif %}
+        </div>
+    {% endfor %}
+</body>
+</html>
